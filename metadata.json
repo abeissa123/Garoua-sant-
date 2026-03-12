@@ -1,0 +1,7 @@
+{
+  "name": "Garoua Santé 3D",
+  "description": "Application de gestion et localisation des pharmacies, cliniques et hôpitaux à Garoua avec assistant IA.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
