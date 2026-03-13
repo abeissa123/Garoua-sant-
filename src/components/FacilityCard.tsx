@@ -1,6 +1,6 @@
 import React from 'react';
 import { Facility } from '../data/facilities';
-import { MapPin, Phone, Clock, Navigation } from 'lucide-react';
+import { MapPin, Phone, Clock, Navigation, Heart } from 'lucide-react';
 import { formatDistance } from '../utils/distance';
 import { motion } from 'framer-motion';
 
@@ -9,9 +9,11 @@ interface FacilityCardProps {
   distance?: number;
   onClick?: () => void;
   isActive?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
-export default function FacilityCard({ facility, distance, onClick, isActive }: FacilityCardProps) {
+export default function FacilityCard({ facility, distance, onClick, isActive, isFavorite = false, onToggleFavorite }: FacilityCardProps) {
   return (
     <motion.div
       whileHover={{ scale: 1.02, y: -2 }}
@@ -32,12 +34,24 @@ export default function FacilityCard({ facility, distance, onClick, isActive }: 
             {facility.type === 'pharmacy' ? 'Pharmacie' : facility.type === 'hospital' ? 'Hôpital' : 'Clinique'}
           </p>
         </div>
-        <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
-          facility.isOpen 
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-            : 'bg-rose-50 text-rose-700 border-rose-200'
-        }`}>
-          {facility.isOpen ? 'Ouvert' : 'Fermé'}
+        <div className="flex items-center gap-2">
+          <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+            facility.isOpen 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+              : 'bg-rose-50 text-rose-700 border-rose-200'
+          }`}>
+            {facility.isOpen ? 'Ouvert' : 'Fermé'}
+          </div>
+          <button 
+            onClick={onToggleFavorite}
+            className={`p-1.5 rounded-full transition-colors ${
+              isFavorite 
+                ? 'bg-red-50 text-red-500' 
+                : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-red-400'
+            }`}
+          >
+            <Heart size={16} className={isFavorite ? 'fill-current' : ''} />
+          </button>
         </div>
       </div>
 

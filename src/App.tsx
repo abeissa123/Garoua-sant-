@@ -5,7 +5,7 @@ import Map3D from './components/Map3D';
 import AIAssistant from './components/AIAssistant';
 import FacilityCard from './components/FacilityCard';
 import Logo from './components/Logo';
-import { Map as MapIcon, List, MessageSquareHeart, Cross, Activity, Building2, LocateFixed, Loader2, RefreshCw, Calendar } from 'lucide-react';
+import { Map as MapIcon, List, MessageSquareHeart, Cross, Activity, Building2, LocateFixed, Loader2, RefreshCw, Calendar, Clock, Heart, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Tab = 'map' | 'list' | 'ai';
@@ -25,6 +25,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('map');
   const [filter, setFilter] = useState<Filter>('all');
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
+  const [showOnlyOpen, setShowOnlyOpen] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -94,6 +97,13 @@ export default function App() {
     }
   };
 
+  const toggleFavorite = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(fId => fId !== id) : [...prev, id]
+    );
+  };
+
   // Get user location on mount
   useEffect(() => {
     refreshLocation();
@@ -106,6 +116,14 @@ export default function App() {
     
     if (filter !== 'all') {
       filtered = filtered.filter(f => f.type === filter);
+    }
+
+    if (showOnlyOpen) {
+      filtered = filtered.filter(f => f.isOpen);
+    }
+
+    if (showFavoritesOnly) {
+      filtered = filtered.filter(f => favorites.includes(f.id));
     }
 
     if (userLocation) {
@@ -177,6 +195,26 @@ export default function App() {
               </div>
               
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <div className="flex items-center gap-2 shrink-0 border-r border-slate-200 pr-2 mr-1">
+                  <button
+                    onClick={() => setShowOnlyOpen(!showOnlyOpen)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                      showOnlyOpen ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Clock size={14} />
+                    Ouvert
+                  </button>
+                  <button
+                    onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                      showFavoritesOnly ? 'bg-red-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Heart size={14} className={showFavoritesOnly ? 'fill-current' : ''} />
+                    Favoris
+                  </button>
+                </div>
                 <Calendar size={16} className="text-slate-400 shrink-0" />
                 {WEEK_DAYS.map(day => (
                   <button
@@ -192,6 +230,36 @@ export default function App() {
                   </button>
                 ))}
               </div>
+
+              {/* Active Filters Summary */}
+              {(filter !== 'all' || showOnlyOpen || showFavoritesOnly || selectedDay !== new Date().getDay()) && (
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  {filter !== 'all' && (
+                    <button onClick={() => setFilter('all')} className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium hover:bg-slate-200 transition-colors">
+                      {filter === 'pharmacy' ? 'Pharmacies' : filter === 'hospital' ? 'Hôpitaux' : 'Cliniques'}
+                      <X size={12} />
+                    </button>
+                  )}
+                  {showOnlyOpen && (
+                    <button onClick={() => setShowOnlyOpen(false)} className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium hover:bg-emerald-100 transition-colors">
+                      Ouvert
+                      <X size={12} />
+                    </button>
+                  )}
+                  {showFavoritesOnly && (
+                    <button onClick={() => setShowFavoritesOnly(false)} className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-700 rounded-md text-xs font-medium hover:bg-red-100 transition-colors">
+                      Favoris
+                      <X size={12} />
+                    </button>
+                  )}
+                  {selectedDay !== new Date().getDay() && (
+                    <button onClick={() => setSelectedDay(new Date().getDay())} className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium hover:bg-blue-100 transition-colors">
+                      {WEEK_DAYS.find(d => d.id === selectedDay)?.label}
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </header>
@@ -227,6 +295,8 @@ export default function App() {
                         facility={selectedFacility} 
                         distance={userLocation ? calculateDistance(userLocation.lat, userLocation.lng, selectedFacility.lat, selectedFacility.lng) : undefined}
                         onClick={() => setSelectedFacility(null)}
+                        isFavorite={favorites.includes(selectedFacility.id)}
+                        onToggleFavorite={(e) => toggleFavorite(selectedFacility.id, e)}
                       />
                     </motion.div>
                   )}
@@ -248,6 +318,8 @@ export default function App() {
                     facility={facility}
                     distance={userLocation ? calculateDistance(userLocation.lat, userLocation.lng, facility.lat, facility.lng) : undefined}
                     onClick={() => handleFacilitySelect(facility)}
+                    isFavorite={favorites.includes(facility.id)}
+                    onToggleFavorite={(e) => toggleFavorite(facility.id, e)}
                   />
                 ))}
                 {sortedFacilities.length === 0 && (
